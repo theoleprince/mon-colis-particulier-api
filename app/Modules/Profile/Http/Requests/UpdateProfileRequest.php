@@ -36,7 +36,7 @@ class UpdateProfileRequest extends FormRequest
 
     public function rules(): array
     {
-        $userId = $this->user()->id;
+        $userId = $this->user()?->id;
 
         return [
             'firstName' => ['sometimes', 'nullable', 'string', 'max:80'],

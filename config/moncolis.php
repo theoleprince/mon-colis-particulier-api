@@ -37,6 +37,12 @@ return [
         'expose_in_response' => (bool) env('MONCOLIS_OTP_EXPOSE', false),
     ],
 
+    /*
+    | API documentation (/docs/api, /docs/swagger) — always open in local env,
+    | elsewhere only when this flag is true (e.g. staging for the mobile team).
+    */
+    'docs_public' => (bool) env('API_DOCS_PUBLIC', false),
+
     'profile' => [
         'avatar_disk' => env('MONCOLIS_AVATAR_DISK', 'public'),
         'avatar_max_kb' => 5120,

@@ -17,7 +17,7 @@ class RequestPhoneChangeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone' => ['required', 'string', new ValidPhoneNumber, new PhoneNotTaken($this->user()->id)],
+            'phone' => ['required', 'string', new ValidPhoneNumber, new PhoneNotTaken($this->user()?->id)],
         ];
     }
 

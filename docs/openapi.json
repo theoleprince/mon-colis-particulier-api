@@ -1,0 +1,1442 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "MonColis Particulier API",
+        "version": "0.1.0",
+        "description": "API backend de **MonColis Particulier** (app mobile Flutter).\r\n\r\n- Base : `/api` \u2014 JSON en camelCase, r\u00e9ponses envelopp\u00e9es dans `{ \"data\": ... }`.\r\n- Authentification : `POST /login_check` (ou `/register`) renvoie un `token` \u00e0 passer en `Authorization: Bearer {token}`.\r\n- En-t\u00eate `client-app-code` : obligatoire lorsque le serveur a des codes configur\u00e9s.\r\n- Erreurs m\u00e9tier : `{ \"message\": \"...\", \"code\": \"INVALID_CREDENTIALS\" }` \u2014 le `code` est stable, l'app peut s'y fier.\r\n- Erreurs de validation : `422 { \"message\": \"...\", \"errors\": { \"champ\": [\"...\"] } }`.\r\n\r\nSwagger UI : [/docs/swagger](/docs/swagger) \u2014 Document OpenAPI brut : [/docs/api.json](/docs/api.json)."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Authentification",
+            "description": "Connexion, inscription et d\u00e9connexion."
+        },
+        {
+            "name": "Profil",
+            "description": "Informations personnelles, photo et suppression du compte."
+        },
+        {
+            "name": "S\u00e9curit\u00e9 du compte",
+            "description": "Mot de passe et changement de num\u00e9ro par code SMS."
+        },
+        {
+            "name": "Pr\u00e9f\u00e9rences",
+            "description": "Langue, th\u00e8me et notifications."
+        },
+        {
+            "name": "Mes adresses",
+            "description": "Maison, Travail et adresses favorites, r\u00e9utilis\u00e9es comme points de d\u00e9part / d'arriv\u00e9e."
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": [],
+            "clientAppCode": []
+        }
+    ],
+    "paths": {
+        "/login_check": {
+            "post": {
+                "operationId": "auth.login",
+                "description": "`username` accepte un nom d'utilisateur, un e-mail ou un num\u00e9ro de t\u00e9l\u00e9phone\n(`677897012`, `+237 677 89 70 12`, `00237677897012`...).\n\nErreurs m\u00e9tier : `401 INVALID_CREDENTIALS`, `403 ACCOUNT_SUSPENDED`. Limit\u00e9 \u00e0 5 essais / minute.",
+                "summary": "Connexion",
+                "tags": [
+                    "Authentification"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "tokenType": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "tokenType",
+                                        "expiresAt",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/register": {
+            "post": {
+                "operationId": "auth.register",
+                "description": "`phone` ou `email` obligatoire. Le num\u00e9ro est normalis\u00e9 au format international (+237...).\nR\u00e9ponse identique \u00e0 la connexion (le compte est connect\u00e9 directement).",
+                "summary": "Inscription",
+                "tags": [
+                    "Authentification"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RegisterRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "tokenType": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "tokenType",
+                                        "expiresAt",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/logout": {
+            "post": {
+                "operationId": "auth.logout",
+                "description": "R\u00e9voque le jeton utilis\u00e9 pour cet appel (les autres appareils restent connect\u00e9s).",
+                "summary": "D\u00e9connexion",
+                "tags": [
+                    "Authentification"
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/profile": {
+            "get": {
+                "operationId": "profile.show",
+                "description": "Inclut `completion` (pourcentage + champs manquants parmi `firstName`, `lastName`,\n`phoneVerified`, `email`, `avatar`) pour le bandeau \u00ab Compl\u00e9tez votre profil \u00bb.",
+                "summary": "Mon profil",
+                "tags": [
+                    "Profil"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "profile.update",
+                "description": "Mise \u00e0 jour partielle : seuls les champs envoy\u00e9s sont modifi\u00e9s. Changer l'e-mail remet\n`emailVerified` \u00e0 `false`. Le num\u00e9ro ne se change pas ici (voir \u00ab S\u00e9curit\u00e9 du compte \u00bb).",
+                "summary": "Modifier mon profil",
+                "tags": [
+                    "Profil"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateProfileRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "profile.destroy",
+                "description": "Efface les donn\u00e9es personnelles, r\u00e9voque tous les jetons et lib\u00e8re le num\u00e9ro / l'e-mail.\nL'historique des livraisons est conserv\u00e9 de fa\u00e7on anonyme.",
+                "summary": "Supprimer mon compte",
+                "tags": [
+                    "Profil"
+                ],
+                "parameters": [
+                    {
+                        "name": "password",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "reason",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "maxLength": 500
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/avatar": {
+            "post": {
+                "operationId": "profile.updateAvatar",
+                "description": "Multipart, champ `avatar` : jpg / png / webp, 5 Mo max, 100\u00d7100 px minimum.",
+                "summary": "Changer ma photo",
+                "tags": [
+                    "Profil"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdateAvatarRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "profile.destroyAvatar",
+                "summary": "Supprimer ma photo",
+                "tags": [
+                    "Profil"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/profile/password": {
+            "put": {
+                "operationId": "accountSecurity.updatePassword",
+                "description": "Par d\u00e9faut (`logoutOtherDevices`), les autres appareils sont d\u00e9connect\u00e9s ; le jeton courant reste valide.",
+                "summary": "Changer mon mot de passe",
+                "tags": [
+                    "S\u00e9curit\u00e9 du compte"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/phone/otp": {
+            "post": {
+                "operationId": "accountSecurity.requestPhoneChange",
+                "description": "Envoie un code \u00e0 6 chiffres par SMS au nouveau num\u00e9ro. `devCode` n'est renvoy\u00e9 qu'en environnement local.\n\nErreurs m\u00e9tier : `429 OTP_COOLDOWN` (nouvel envoi avant `resendIn` secondes), `422 SAME_PHONE`.",
+                "summary": "Changer de num\u00e9ro \u2014 1. envoyer le code",
+                "tags": [
+                    "S\u00e9curit\u00e9 du compte"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequestPhoneChangeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "destination": {
+                                                    "type": "string"
+                                                },
+                                                "expiresIn": {
+                                                    "type": "integer"
+                                                },
+                                                "resendIn": {
+                                                    "type": "integer"
+                                                },
+                                                "devCode": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "destination",
+                                                "expiresIn",
+                                                "resendIn"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/phone/verify": {
+            "post": {
+                "operationId": "accountSecurity.confirmPhoneChange",
+                "description": "Erreurs m\u00e9tier : `422 OTP_INVALID`, `422 OTP_EXPIRED`, `429 OTP_TOO_MANY_ATTEMPTS` (5 essais).",
+                "summary": "Changer de num\u00e9ro \u2014 2. valider le code",
+                "tags": [
+                    "S\u00e9curit\u00e9 du compte"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmPhoneChangeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/preferences": {
+            "get": {
+                "operationId": "preference.show",
+                "summary": "Mes pr\u00e9f\u00e9rences",
+                "tags": [
+                    "Pr\u00e9f\u00e9rences"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`PreferencesResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PreferencesResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "preference.update",
+                "description": "Mise \u00e0 jour partielle. `language` : `fr` ou `en`.",
+                "summary": "Modifier mes pr\u00e9f\u00e9rences",
+                "tags": [
+                    "Pr\u00e9f\u00e9rences"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePreferencesRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`PreferencesResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/PreferencesResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/places": {
+            "get": {
+                "operationId": "places.index",
+                "description": "Ordre : Maison, Travail, puis favoris (les plus r\u00e9cemment utilis\u00e9s d'abord).",
+                "summary": "Lister mes adresses",
+                "tags": [
+                    "Mes adresses"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `SavedPlaceResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SavedPlaceResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "places.store",
+                "description": "Un seul `home` et un seul `work` : les renvoyer remplace l'adresse existante (r\u00e9ponse 200 au lieu de 201).\n`label` par d\u00e9faut : \u00ab Maison \u00bb, \u00ab Travail \u00bb ou \u00ab Adresse favorite \u00bb.\nErreur m\u00e9tier : `422 SAVED_PLACES_LIMIT` (20 adresses max).",
+                "summary": "Ajouter une adresse",
+                "tags": [
+                    "Mes adresses"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SavedPlaceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/places/{place}": {
+            "get": {
+                "operationId": "places.show",
+                "summary": "D\u00e9tail d'une adresse",
+                "tags": [
+                    "Mes adresses"
+                ],
+                "parameters": [
+                    {
+                        "name": "place",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`SavedPlaceResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SavedPlaceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "places.update",
+                "description": "Erreur m\u00e9tier : `409 SAVED_PLACE_TYPE_TAKEN` si l'on transforme une adresse en `home` / `work` d\u00e9j\u00e0 existante.",
+                "summary": "Modifier une adresse",
+                "tags": [
+                    "Mes adresses"
+                ],
+                "parameters": [
+                    {
+                        "name": "place",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SavedPlaceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`SavedPlaceResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/SavedPlaceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "places.destroy",
+                "summary": "Supprimer une adresse",
+                "tags": [
+                    "Mes adresses"
+                ],
+                "parameters": [
+                    {
+                        "name": "place",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Jeton renvoy\u00e9 par /login_check ou /register.",
+                "scheme": "bearer"
+            },
+            "clientAppCode": {
+                "type": "apiKey",
+                "description": "Code de l'application cliente (v\u00e9rifi\u00e9 si MONCOLIS_CLIENT_APP_CODES est renseign\u00e9).",
+                "in": "header",
+                "name": "client-app-code"
+            }
+        },
+        "schemas": {
+            "ConfirmPhoneChangeRequest": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "phone",
+                    "code"
+                ],
+                "title": "ConfirmPhoneChangeRequest"
+            },
+            "Gender": {
+                "type": "string",
+                "enum": [
+                    "male",
+                    "female",
+                    "other"
+                ],
+                "title": "Gender"
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "username": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "deviceName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "username",
+                    "password"
+                ],
+                "title": "LoginRequest"
+            },
+            "PreferencesResource": {
+                "type": "object",
+                "properties": {
+                    "language": {
+                        "type": "string"
+                    },
+                    "theme": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "notifyPush": {
+                        "type": "boolean"
+                    },
+                    "notifySms": {
+                        "type": "boolean"
+                    },
+                    "notifyEmail": {
+                        "type": "boolean"
+                    },
+                    "marketingOptIn": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "language",
+                    "theme",
+                    "notifyPush",
+                    "notifySms",
+                    "notifyEmail",
+                    "marketingOptIn"
+                ],
+                "title": "PreferencesResource"
+            },
+            "ProfileResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "firstName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "lastName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "fullName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "displayName": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "phoneVerified": {
+                        "type": "boolean"
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "emailVerified": {
+                        "type": "boolean"
+                    },
+                    "avatarUrl": {
+                        "type": "null"
+                    },
+                    "gender": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "birthDate": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "countryCode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "profile": {
+                        "type": "string",
+                        "description": "Legacy field read by the Flutter UserModel.",
+                        "const": "PARTICULIER"
+                    },
+                    "memberSince": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "completion": {
+                        "type": "object",
+                        "properties": {
+                            "percent": {
+                                "type": "integer"
+                            },
+                            "missing": {
+                                "type": "array",
+                                "items": {}
+                            }
+                        },
+                        "required": [
+                            "percent",
+                            "missing"
+                        ]
+                    },
+                    "preferences": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/PreferencesResource"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "username",
+                    "firstName",
+                    "lastName",
+                    "fullName",
+                    "displayName",
+                    "phone",
+                    "phoneVerified",
+                    "email",
+                    "emailVerified",
+                    "avatarUrl",
+                    "gender",
+                    "birthDate",
+                    "countryCode",
+                    "profile",
+                    "memberSince",
+                    "completion"
+                ],
+                "title": "ProfileResource"
+            },
+            "RegisterRequest": {
+                "type": "object",
+                "properties": {
+                    "firstName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 80
+                    },
+                    "lastName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 80
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 3,
+                        "maxLength": 60
+                    },
+                    "phone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "deviceName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "password"
+                ],
+                "title": "RegisterRequest"
+            },
+            "RequestPhoneChangeRequest": {
+                "type": "object",
+                "properties": {
+                    "phone": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "phone"
+                ],
+                "title": "RequestPhoneChangeRequest"
+            },
+            "SavedPlaceRequest": {
+                "type": "object",
+                "description": "Create (POST: all required fields) and update (PATCH/PUT: partial) of a saved place.",
+                "properties": {
+                    "type": {
+                        "$ref": "#/components/schemas/SavedPlaceType"
+                    },
+                    "label": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 60
+                    },
+                    "address": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "addressDetails": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 255
+                    },
+                    "instructions": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    },
+                    "latitude": {
+                        "type": "number",
+                        "minimum": -90,
+                        "maximum": 90
+                    },
+                    "longitude": {
+                        "type": "number",
+                        "minimum": -180,
+                        "maximum": 180
+                    }
+                },
+                "required": [
+                    "type",
+                    "address",
+                    "latitude",
+                    "longitude"
+                ],
+                "title": "SavedPlaceRequest"
+            },
+            "SavedPlaceResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "addressDetails": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "instructions": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "latitude": {
+                        "type": "number"
+                    },
+                    "longitude": {
+                        "type": "number"
+                    },
+                    "lastUsedAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "label",
+                    "address",
+                    "addressDetails",
+                    "instructions",
+                    "latitude",
+                    "longitude",
+                    "lastUsedAt",
+                    "createdAt"
+                ],
+                "title": "SavedPlaceResource"
+            },
+            "SavedPlaceType": {
+                "type": "string",
+                "enum": [
+                    "home",
+                    "work",
+                    "other"
+                ],
+                "title": "SavedPlaceType"
+            },
+            "UpdateAvatarRequest": {
+                "type": "object",
+                "properties": {
+                    "avatar": {
+                        "type": "string",
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 5120 kilobytes."
+                    }
+                },
+                "required": [
+                    "avatar"
+                ],
+                "title": "UpdateAvatarRequest"
+            },
+            "UpdatePasswordRequest": {
+                "type": "object",
+                "properties": {
+                    "currentPassword": {
+                        "type": "string"
+                    },
+                    "newPassword": {
+                        "type": "string"
+                    },
+                    "newPasswordConfirmation": {
+                        "type": "string"
+                    },
+                    "logoutOtherDevices": {
+                        "type": "boolean",
+                        "description": "Yango-like \"log out other devices\" (default: yes)."
+                    }
+                },
+                "required": [
+                    "currentPassword",
+                    "newPassword",
+                    "newPasswordConfirmation"
+                ],
+                "title": "UpdatePasswordRequest"
+            },
+            "UpdatePreferencesRequest": {
+                "type": "object",
+                "properties": {
+                    "language": {
+                        "type": "string",
+                        "enum": [
+                            "fr",
+                            "en"
+                        ]
+                    },
+                    "theme": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 30
+                    },
+                    "notifyPush": {
+                        "type": "boolean"
+                    },
+                    "notifySms": {
+                        "type": "boolean"
+                    },
+                    "notifyEmail": {
+                        "type": "boolean"
+                    },
+                    "marketingOptIn": {
+                        "type": "boolean"
+                    }
+                },
+                "title": "UpdatePreferencesRequest"
+            },
+            "UpdateProfileRequest": {
+                "type": "object",
+                "properties": {
+                    "firstName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 80
+                    },
+                    "lastName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 80
+                    },
+                    "username": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 3,
+                        "maxLength": 60
+                    },
+                    "email": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "gender": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/Gender"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "birthDate": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date"
+                    },
+                    "countryCode": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 2,
+                        "maxLength": 2
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "The phone number is the account identity: it only changes through the SMS code flow."
+                    }
+                },
+                "title": "UpdateProfileRequest"
+            }
+        },
+        "responses": {
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthenticationException": {
+                "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

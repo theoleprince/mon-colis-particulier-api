@@ -69,6 +69,24 @@ app/
 
 Endpoint details: [docs/API-PROFIL.md](docs/API-PROFIL.md).
 
+### API documentation (Swagger)
+
+Generated from the code by [Scramble](https://scramble.dedoc.co) — FormRequests, Resources and PHPDoc
+(write controller PHPDoc in French: first line = title, then description + business error codes).
+
+| URL | |
+|---|---|
+| `/docs/swagger` | Swagger UI ("Try it out", "Authorize" with the bearer token) |
+| `/docs/api` | Scramble UI (Stoplight Elements) |
+| `/docs/api.json` | OpenAPI 3.1 document — versioned copy in `docs/openapi.json` |
+
+Open in the local environment; elsewhere only with `API_DOCS_PUBLIC=true`.
+Refresh the versioned copy: `php artisan scramble:export --path=docs/openapi.json`.
+
+## Work reports
+
+One report per realization in [docs/rapports/](docs/rapports/README.md).
+
 ## Tests
 
 ```powershell
