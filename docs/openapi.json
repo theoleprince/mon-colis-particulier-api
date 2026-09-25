@@ -38,6 +38,18 @@
         {
             "name": "Mes adresses",
             "description": "Maison, Travail et adresses favorites, r\u00e9utilis\u00e9es comme points de d\u00e9part / d'arriv\u00e9e."
+        },
+        {
+            "name": "Exp\u00e9dier \u2014 r\u00e9f\u00e9rentiels",
+            "description": "Natures de colis, v\u00e9hicules, options et moyens de paiement."
+        },
+        {
+            "name": "Exp\u00e9dier \u2014 prix",
+            "description": "Estimation du prix par v\u00e9hicule."
+        },
+        {
+            "name": "Exp\u00e9dier \u2014 livraisons",
+            "description": "Cr\u00e9ation, suivi, historique et annulation des livraisons."
         }
     ],
     "security": [
@@ -1240,6 +1252,739 @@
                     }
                 }
             }
+        },
+        "/configurations/nature-colis": {
+            "get": {
+                "operationId": "configuration.natures",
+                "description": "Liste affich\u00e9e \u00e0 l'\u00e9tape \u00ab D\u00e9tails du colis \u00bb. Chemin identique \u00e0 l'ancienne API.",
+                "summary": "Natures de colis",
+                "tags": [
+                    "Exp\u00e9dier \u2014 r\u00e9f\u00e9rentiels"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of `PackageNatureResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PackageNatureResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/configurations/expedition": {
+            "get": {
+                "operationId": "configuration.expedition",
+                "description": "V\u00e9hicules (avec poids maximum et prix de d\u00e9part), options payantes et moyens de paiement.",
+                "summary": "Configuration d'une exp\u00e9dition",
+                "tags": [
+                    "Exp\u00e9dier \u2014 r\u00e9f\u00e9rentiels"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "vehicles": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/VehicleTypeResource"
+                                                    }
+                                                },
+                                                "options": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/DeliveryOptionResource"
+                                                    }
+                                                },
+                                                "paymentMethods": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "quoteTtlMinutes": {
+                                                    "type": "integer"
+                                                },
+                                                "maxDistanceKm": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "required": [
+                                                "currency",
+                                                "vehicles",
+                                                "options",
+                                                "paymentMethods",
+                                                "quoteTtlMinutes",
+                                                "maxDistanceKm"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/tarifs/estimer": {
+            "get": {
+                "operationId": "delivery.estimate",
+                "description": "Calcule, pour chaque v\u00e9hicule, le prix de la course (distance routi\u00e8re r\u00e9elle, poids,\noptions). Chaque devis disponible a un `quoteId`, valable `expiresAt` (15 min) : la livraison\nse cr\u00e9e avec ce `quoteId`, et le prix annonc\u00e9 est celui qui est factur\u00e9.\n\n`weightKg` : poids total de l'envoi (somme poids \u00d7 quantit\u00e9). `options` : codes s\u00e9par\u00e9s\npar des virgules (`express,assurance`).\n\nErreur m\u00e9tier : `422 DISTANCE_TOO_LONG` (au-del\u00e0 de la zone desservie).",
+                "summary": "Estimer le prix",
+                "tags": [
+                    "Exp\u00e9dier \u2014 prix"
+                ],
+                "parameters": [
+                    {
+                        "name": "pickupLatitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        }
+                    },
+                    {
+                        "name": "pickupLongitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        }
+                    },
+                    {
+                        "name": "deliveryLatitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -90,
+                            "maximum": 90
+                        }
+                    },
+                    {
+                        "name": "deliveryLongitude",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "number",
+                            "minimum": -180,
+                            "maximum": 180
+                        }
+                    },
+                    {
+                        "name": "weightKg",
+                        "in": "query",
+                        "required": true,
+                        "description": "Total weight of the shipment (sum of weight \u00d7 quantity).",
+                        "schema": {
+                            "type": "number",
+                            "minimum": 0.1,
+                            "maximum": 5000
+                        }
+                    },
+                    {
+                        "name": "declaredValue",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "minimum": 0,
+                            "maximum": 100000000
+                        }
+                    },
+                    {
+                        "name": "options[]",
+                        "in": "query",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "distanceKm": {
+                                                    "type": "number"
+                                                },
+                                                "routeSource": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "osrm",
+                                                        "straight"
+                                                    ]
+                                                },
+                                                "expiresAt": {
+                                                    "type": "string"
+                                                },
+                                                "currency": {
+                                                    "type": "string"
+                                                },
+                                                "quotes": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "quoteId": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "vehicle": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "code": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "label": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "description": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "code",
+                                                                    "label",
+                                                                    "description"
+                                                                ]
+                                                            },
+                                                            "available": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "unavailableReason": {
+                                                                "type": "string"
+                                                            },
+                                                            "pickupEtaMinutes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "etaMinutes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "breakdown": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "code": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "label": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "amount": {
+                                                                            "type": "integer"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "code",
+                                                                        "label",
+                                                                        "amount"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "total": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "quoteId",
+                                                            "vehicle",
+                                                            "available"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "distanceKm",
+                                                "routeSource",
+                                                "expiresAt",
+                                                "currency",
+                                                "quotes"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/livraisons": {
+            "post": {
+                "operationId": "modules.delivery.delivery.store_27",
+                "description": "\u00c0 partir d'un devis (`quoteId` de \u00ab Estimer le prix \u00bb) : le prix et le v\u00e9hicule viennent du\ndevis, jamais de l'app. Les points, le poids total et la valeur d\u00e9clar\u00e9e doivent correspondre\nau devis. L'exp\u00e9diteur est par d\u00e9faut l'utilisateur connect\u00e9.\n\nStatut initial : `EN_ATTENTE_PAIEMENT` (Mobile Money) ou `RECHERCHE_COURSIER` (esp\u00e8ces).\n\nErreurs m\u00e9tier : `422 QUOTE_EXPIRED` (devis expir\u00e9, d\u00e9j\u00e0 utilis\u00e9 ou inconnu),\n`422 QUOTE_MISMATCH` (la livraison a chang\u00e9 depuis l'estimation).",
+                "summary": "Cr\u00e9er une livraison",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreDeliveryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`DeliveryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DeliveryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/livraisons/create": {
+            "post": {
+                "operationId": "modules.delivery.delivery.store_28",
+                "description": "\u00c0 partir d'un devis (`quoteId` de \u00ab Estimer le prix \u00bb) : le prix et le v\u00e9hicule viennent du\ndevis, jamais de l'app. Les points, le poids total et la valeur d\u00e9clar\u00e9e doivent correspondre\nau devis. L'exp\u00e9diteur est par d\u00e9faut l'utilisateur connect\u00e9.\n\nStatut initial : `EN_ATTENTE_PAIEMENT` (Mobile Money) ou `RECHERCHE_COURSIER` (esp\u00e8ces).\n\nErreurs m\u00e9tier : `422 QUOTE_EXPIRED` (devis expir\u00e9, d\u00e9j\u00e0 utilis\u00e9 ou inconnu),\n`422 QUOTE_MISMATCH` (la livraison a chang\u00e9 depuis l'estimation).",
+                "summary": "Cr\u00e9er une livraison",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StoreDeliveryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`DeliveryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DeliveryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/livraisons/mes-livraisons": {
+            "get": {
+                "operationId": "delivery.index",
+                "description": "Historique pagin\u00e9, les plus r\u00e9centes d'abord.",
+                "summary": "Mes livraisons",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "active (en cours, par d\u00e9faut) \u00b7 done (livr\u00e9es) \u00b7 cancelled (annul\u00e9es) \u00b7 all",
+                        "schema": {
+                            "type": "string",
+                            "default": "all"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated set of `DeliverySummaryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/DeliverySummaryResource"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object",
+                                            "properties": {
+                                                "first": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "last": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "prev": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "next": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "first",
+                                                "last",
+                                                "prev",
+                                                "next"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "from": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "minimum": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "minimum": 1
+                                                },
+                                                "links": {
+                                                    "type": "array",
+                                                    "description": "Generated paginator links.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "label": {
+                                                                "type": "string"
+                                                            },
+                                                            "active": {
+                                                                "type": "boolean"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "url",
+                                                            "label",
+                                                            "active"
+                                                        ]
+                                                    }
+                                                },
+                                                "path": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ],
+                                                    "description": "Base path for paginator generated URLs."
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "description": "Number of items shown per page.",
+                                                    "minimum": 0
+                                                },
+                                                "to": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ],
+                                                    "description": "Number of the last item in the slice.",
+                                                    "minimum": 1
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "description": "Total number of items being paginated.",
+                                                    "minimum": 0
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "from",
+                                                "last_page",
+                                                "links",
+                                                "path",
+                                                "per_page",
+                                                "to",
+                                                "total"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data",
+                                        "links",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/livraisons/{reference}": {
+            "get": {
+                "operationId": "delivery.show",
+                "description": "Adresses, colis, prix, paiement, photos et chronologie des statuts.",
+                "summary": "D\u00e9tail d'une livraison",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "parameters": [
+                    {
+                        "name": "reference",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "`DeliveryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DeliveryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/livraisons/{reference}/medias": {
+            "post": {
+                "operationId": "delivery.uploadMedia",
+                "description": "Multipart, champ `files[]` : jpg, png, webp, mp4 ou mov (50 Mo max par fichier).\n6 photos et 1 vid\u00e9o maximum par livraison.\n\nErreurs m\u00e9tier : `422 MEDIA_LIMIT`, `409 DELIVERY_FINISHED`.",
+                "summary": "Ajouter des photos / vid\u00e9os du colis",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "parameters": [
+                    {
+                        "name": "reference",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UploadDeliveryMediaRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`DeliveryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DeliveryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/livraisons/{reference}/annuler": {
+            "post": {
+                "operationId": "delivery.cancel",
+                "description": "Possible jusqu'au ramassage du colis.\n\nErreur m\u00e9tier : `409 CANCEL_NOT_ALLOWED`.",
+                "summary": "Annuler une livraison",
+                "tags": [
+                    "Exp\u00e9dier \u2014 livraisons"
+                ],
+                "parameters": [
+                    {
+                        "name": "reference",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelDeliveryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`DeliveryResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/DeliveryResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1257,6 +2002,19 @@
             }
         },
         "schemas": {
+            "CancelDeliveryRequest": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 500
+                    }
+                },
+                "title": "CancelDeliveryRequest"
+            },
             "ConfirmPhoneChangeRequest": {
                 "type": "object",
                 "properties": {
@@ -1272,6 +2030,460 @@
                     "code"
                 ],
                 "title": "ConfirmPhoneChangeRequest"
+            },
+            "DeliveryOptionResource": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "pricingType": {
+                        "type": "string",
+                        "description": "fixed : montant en FCFA \u00b7 fare_percent : % de la course \u00b7 value_percent : % de la valeur d\u00e9clar\u00e9e"
+                    },
+                    "amount": {
+                        "type": "number"
+                    },
+                    "minAmount": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "code",
+                    "label",
+                    "description",
+                    "pricingType",
+                    "amount",
+                    "minAmount"
+                ],
+                "title": "DeliveryOptionResource"
+            },
+            "DeliveryResource": {
+                "type": "object",
+                "properties": {
+                    "reference": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "statusLabel": {
+                        "type": "string",
+                        "enum": [
+                            "En attente de paiement",
+                            "Recherche d'un coursier",
+                            "Coursier en route",
+                            "Ramassage en cours",
+                            "Colis r\u00e9cup\u00e9r\u00e9",
+                            "En cours de livraison",
+                            "Livr\u00e9",
+                            "R\u00e9ception confirm\u00e9e",
+                            "Annul\u00e9e"
+                        ]
+                    },
+                    "canCancel": {
+                        "type": "boolean"
+                    },
+                    "vehicle": {
+                        "type": "object",
+                        "properties": {
+                            "code": {
+                                "type": "string"
+                            },
+                            "label": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "code",
+                            "label"
+                        ]
+                    },
+                    "pickup": {
+                        "type": "object",
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "details": {
+                                "type": "string"
+                            },
+                            "instructions": {
+                                "type": "string"
+                            },
+                            "latitude": {
+                                "type": "string"
+                            },
+                            "longitude": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "address",
+                            "details",
+                            "instructions",
+                            "latitude",
+                            "longitude"
+                        ]
+                    },
+                    "delivery": {
+                        "type": "object",
+                        "properties": {
+                            "address": {
+                                "type": "string"
+                            },
+                            "details": {
+                                "type": "string"
+                            },
+                            "instructions": {
+                                "type": "string"
+                            },
+                            "latitude": {
+                                "type": "string"
+                            },
+                            "longitude": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "address",
+                            "details",
+                            "instructions",
+                            "latitude",
+                            "longitude"
+                        ]
+                    },
+                    "sender": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "phone": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "phone"
+                        ]
+                    },
+                    "receiver": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string"
+                            },
+                            "phone": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "phone"
+                        ]
+                    },
+                    "packages": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "nature": {
+                                    "type": "object",
+                                    "properties": {
+                                        "code": {
+                                            "type": "string"
+                                        },
+                                        "label": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "code",
+                                        "label"
+                                    ]
+                                },
+                                "description": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "weightKg": {
+                                    "type": "number"
+                                },
+                                "quantity": {
+                                    "type": "integer"
+                                },
+                                "declaredValue": {
+                                    "type": "integer"
+                                },
+                                "lengthCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "widthCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "heightCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "nature",
+                                "description",
+                                "weightKg",
+                                "quantity",
+                                "declaredValue",
+                                "lengthCm",
+                                "widthCm",
+                                "heightCm"
+                            ]
+                        }
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {}
+                    },
+                    "distanceKm": {
+                        "type": "number"
+                    },
+                    "etaMinutes": {
+                        "type": "integer"
+                    },
+                    "price": {
+                        "type": "object",
+                        "properties": {
+                            "breakdown": {
+                                "type": "array",
+                                "items": {}
+                            },
+                            "total": {
+                                "type": "integer"
+                            },
+                            "currency": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "breakdown",
+                            "total",
+                            "currency"
+                        ]
+                    },
+                    "payment": {
+                        "type": "object",
+                        "properties": {
+                            "method": {
+                                "type": "string"
+                            },
+                            "methodLabel": {
+                                "type": "string",
+                                "enum": [
+                                    "Mobile Money",
+                                    "Esp\u00e8ces \u00e0 la livraison"
+                                ]
+                            },
+                            "status": {
+                                "type": "string"
+                            },
+                            "phone": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "method",
+                            "methodLabel",
+                            "status",
+                            "phone"
+                        ]
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "type": {
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "type",
+                                "url"
+                            ]
+                        }
+                    },
+                    "events": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "status": {
+                                    "type": "string"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "enum": [
+                                        "En attente de paiement",
+                                        "Recherche d'un coursier",
+                                        "Coursier en route",
+                                        "Ramassage en cours",
+                                        "Colis r\u00e9cup\u00e9r\u00e9",
+                                        "En cours de livraison",
+                                        "Livr\u00e9",
+                                        "R\u00e9ception confirm\u00e9e",
+                                        "Annul\u00e9e"
+                                    ]
+                                },
+                                "actor": {
+                                    "type": "string"
+                                },
+                                "note": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "at": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "status",
+                                "label",
+                                "actor",
+                                "note",
+                                "at"
+                            ]
+                        }
+                    },
+                    "cancelReason": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "cancelledAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "reference",
+                    "status",
+                    "statusLabel",
+                    "canCancel",
+                    "vehicle",
+                    "pickup",
+                    "delivery",
+                    "sender",
+                    "receiver",
+                    "packages",
+                    "options",
+                    "distanceKm",
+                    "etaMinutes",
+                    "price",
+                    "payment",
+                    "media",
+                    "events",
+                    "cancelReason",
+                    "cancelledAt",
+                    "createdAt"
+                ],
+                "title": "DeliveryResource"
+            },
+            "DeliverySummaryResource": {
+                "type": "object",
+                "properties": {
+                    "reference": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "statusLabel": {
+                        "type": "string",
+                        "enum": [
+                            "En attente de paiement",
+                            "Recherche d'un coursier",
+                            "Coursier en route",
+                            "Ramassage en cours",
+                            "Colis r\u00e9cup\u00e9r\u00e9",
+                            "En cours de livraison",
+                            "Livr\u00e9",
+                            "R\u00e9ception confirm\u00e9e",
+                            "Annul\u00e9e"
+                        ]
+                    },
+                    "vehicle": {
+                        "type": "string"
+                    },
+                    "pickupAddress": {
+                        "type": "string"
+                    },
+                    "deliveryAddress": {
+                        "type": "string"
+                    },
+                    "receiverName": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "reference",
+                    "status",
+                    "statusLabel",
+                    "vehicle",
+                    "pickupAddress",
+                    "deliveryAddress",
+                    "receiverName",
+                    "total",
+                    "currency",
+                    "createdAt"
+                ],
+                "title": "DeliverySummaryResource"
             },
             "ForgotPasswordRequest": {
                 "type": "object",
@@ -1320,6 +2532,45 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "PackageNatureResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "unitBilling": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "code",
+                    "label",
+                    "description",
+                    "unitBilling"
+                ],
+                "title": "PackageNatureResource"
+            },
+            "PaymentMethod": {
+                "type": "string",
+                "enum": [
+                    "mobile_money",
+                    "cash"
+                ],
+                "title": "PaymentMethod"
             },
             "PhoneCodeRequest": {
                 "type": "object",
@@ -1725,6 +2976,210 @@
                 ],
                 "title": "SavedPlaceType"
             },
+            "StoreDeliveryRequest": {
+                "type": "object",
+                "properties": {
+                    "quoteId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "pickup": {
+                        "type": "object",
+                        "properties": {
+                            "address": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "details": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 255
+                            },
+                            "instructions": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 500
+                            },
+                            "latitude": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                            },
+                            "longitude": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                            }
+                        },
+                        "required": [
+                            "address",
+                            "latitude",
+                            "longitude"
+                        ]
+                    },
+                    "delivery": {
+                        "type": "object",
+                        "properties": {
+                            "address": {
+                                "type": "string",
+                                "maxLength": 255
+                            },
+                            "details": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 255
+                            },
+                            "instructions": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "maxLength": 500
+                            },
+                            "latitude": {
+                                "type": "number",
+                                "minimum": -90,
+                                "maximum": 90
+                            },
+                            "longitude": {
+                                "type": "number",
+                                "minimum": -180,
+                                "maximum": 180
+                            }
+                        },
+                        "required": [
+                            "address",
+                            "latitude",
+                            "longitude"
+                        ]
+                    },
+                    "sender": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "maxLength": 120
+                            },
+                            "phone": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "phone"
+                        ]
+                    },
+                    "receiver": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "maxLength": 120
+                            },
+                            "phone": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "phone"
+                        ]
+                    },
+                    "packages": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "natureCode": {
+                                    "type": "string"
+                                },
+                                "description": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "maxLength": 255
+                                },
+                                "weightKg": {
+                                    "type": "number",
+                                    "minimum": 0.1,
+                                    "maximum": 5000
+                                },
+                                "quantity": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 100
+                                },
+                                "declaredValue": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 0
+                                },
+                                "lengthCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 1000
+                                },
+                                "widthCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 1000
+                                },
+                                "heightCm": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ],
+                                    "minimum": 1,
+                                    "maximum": 1000
+                                }
+                            },
+                            "required": [
+                                "natureCode",
+                                "weightKg"
+                            ]
+                        },
+                        "minItems": 1,
+                        "maxItems": 20
+                    },
+                    "paymentMethod": {
+                        "$ref": "#/components/schemas/PaymentMethod"
+                    },
+                    "paymentPhone": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "quoteId",
+                    "pickup",
+                    "delivery",
+                    "sender",
+                    "receiver",
+                    "packages",
+                    "paymentMethod"
+                ],
+                "title": "StoreDeliveryRequest"
+            },
             "UpdateAvatarRequest": {
                 "type": "object",
                 "properties": {
@@ -1863,6 +3318,58 @@
                     }
                 },
                 "title": "UpdateProfileRequest"
+            },
+            "UploadDeliveryMediaRequest": {
+                "type": "object",
+                "properties": {
+                    "files": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "binary",
+                            "contentMediaType": "application/octet-stream",
+                            "description": "Photos up to 10 MB, videos (mp4 / mov) up to 50 MB."
+                        },
+                        "minItems": 1,
+                        "maxItems": 7
+                    }
+                },
+                "required": [
+                    "files"
+                ],
+                "title": "UploadDeliveryMediaRequest"
+            },
+            "VehicleTypeResource": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "maxWeightKg": {
+                        "type": "number"
+                    },
+                    "minFare": {
+                        "type": "integer",
+                        "description": "\"\u00c0 partir de\" price shown on the vehicle card before any estimate."
+                    }
+                },
+                "required": [
+                    "code",
+                    "label",
+                    "description",
+                    "maxWeightKg",
+                    "minFare"
+                ],
+                "title": "VehicleTypeResource"
             },
             "VerifyEmailRequest": {
                 "type": "object",

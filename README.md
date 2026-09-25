@@ -43,7 +43,7 @@ app/
 |---|---|---|
 | `Identity` — login, register, logout, OTP | `authentication` | **done** |
 | `Profile` — info, avatar, phone (OTP), password, preferences, saved places, account deletion | `authentication/account_page`, `settings` | **done** |
-| `Delivery` — Expedier: pricing, creation, tracking, receipt confirmation | `delivery` | next |
+| `Delivery` — Expedier: reference data, pricing (quotes), creation, history, cancellation — payment, couriers, tracking next (see docs/PLAN_BACKEND.md) | `delivery` | **in progress** |
 | `Payments` — mobile money (MTN MoMo, Orange Money) | `delivery` (payment step), `wallet` | planned |
 | `Rides` — Course / VTC / coursier | `rides` | planned |
 | `Travel` — interurban tickets | `travel` | planned |
@@ -67,7 +67,7 @@ app/
   with a stable `code` (e.g. `INVALID_CREDENTIALS`, `OTP_EXPIRED`) the app can switch on.
 - Legacy contract kept for the existing Flutter code: `POST /api/login_check` → `{ token, data }`.
 
-Endpoint details: [docs/API-PROFIL.md](docs/API-PROFIL.md).
+Endpoint details: [docs/API-PROFIL.md](docs/API-PROFIL.md). Roadmap and status: [docs/PLAN_BACKEND.md](docs/PLAN_BACKEND.md).
 
 ### API documentation (Swagger)
 

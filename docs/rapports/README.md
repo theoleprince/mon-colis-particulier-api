@@ -10,3 +10,4 @@ Un rapport par réalisation, du plus ancien au plus récent. Numérotation commu
 | 04 | 25/09/2026 | Adresses enregistrées dans le parcours Expédier — voir le dépôt de l'app mobile | Terminé |
 | 05 | 25/09/2026 | [Connexion par SMS, mot de passe oublié et vérification d'e-mail (backend)](2026-09-25-05-connexion-sms-et-mot-de-passe-oublie-backend.md) | Terminé |
 | 06 | 25/09/2026 | Connexion par SMS façon Yango et mot de passe oublié (app mobile) — voir le dépôt de l'app mobile | Terminé |
+| 07 | 25/09/2026 | [Plan du backend et migration Expédier — lot 1 : prix réel et livraisons](2026-09-25-07-migration-expedier-prix-et-livraisons.md) | Terminé |

@@ -43,6 +43,23 @@ return [
     */
     'docs_public' => (bool) env('API_DOCS_PUBLIC', false),
 
+    'delivery' => [
+        'currency' => 'XAF',
+        // Distance source: 'osrm' (real road itinerary, straight line as fallback) or 'straight'.
+        'routing' => env('MONCOLIS_DELIVERY_ROUTING', 'osrm'),
+        'osrm_url' => env('MONCOLIS_OSRM_URL', 'https://router.project-osrm.org'),
+        // Straight line distance × this factor ≈ road distance in town.
+        'straight_line_factor' => 1.3,
+        'max_distance_km' => (float) env('MONCOLIS_DELIVERY_MAX_KM', 60),
+        // A quote guarantees its price for this long.
+        'quote_ttl_minutes' => 15,
+        // Prices are rounded up to this amount (FCFA coins).
+        'price_rounding' => 50,
+        'media_disk' => env('MONCOLIS_MEDIA_DISK', 'public'),
+        'max_images' => 6,
+        'max_videos' => 1,
+    ],
+
     'profile' => [
         'avatar_disk' => env('MONCOLIS_AVATAR_DISK', 'public'),
         'avatar_max_kb' => 5120,
