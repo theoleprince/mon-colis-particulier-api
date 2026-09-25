@@ -3,7 +3,7 @@
 namespace App\Modules\Identity\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Modules\Identity\Http\Controllers\Concerns\RespondsWithToken;
 use App\Modules\Identity\Http\Requests\LoginRequest;
 use App\Modules\Identity\Http\Requests\RegisterRequest;
 use App\Modules\Identity\Services\AuthService;
@@ -12,11 +12,12 @@ use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Carbon;
 
-#[Group('Authentification', 'Connexion, inscription et déconnexion.', weight: 0)]
+#[Group('Authentification', 'Connexion par mot de passe, inscription classique et déconnexion.', weight: 0)]
 class AuthController extends Controller
 {
+    use RespondsWithToken;
+
     public function __construct(private readonly AuthService $auth)
     {
     }
@@ -74,20 +75,5 @@ class AuthController extends Controller
         $this->auth->logout($request->user());
 
         return response()->noContent();
-    }
-
-    /**
-     * Legacy shape expected by the Flutter UserModel: `{ token, data: {...} }`.
-     */
-    private function tokenResponse(Request $request, User $user, string $token, Carbon $expiresAt, int $status = 200): JsonResponse
-    {
-        $user->load('preferences');
-
-        return response()->json([
-            'token' => $token,
-            'tokenType' => 'Bearer',
-            'expiresAt' => $expiresAt->toIso8601String(),
-            'data' => ProfileResource::make($user)->resolve($request),
-        ], $status);
     }
 }

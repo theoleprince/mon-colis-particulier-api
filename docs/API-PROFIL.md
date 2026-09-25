@@ -21,6 +21,12 @@ JSON en camelCase. Erreurs métier : `{ "message": "...", "code": "..." }`.
 | P9 | `/profile/places` | GET / POST | oui |
 | P10 | `/profile/places/{id}` | GET / PATCH / DELETE | oui |
 | P11 | `/profile` | DELETE | oui |
+| S1 | `/auth/otp/request` | POST | — |
+| S2 | `/auth/otp/verify` | POST | — |
+| R1 | `/password/forgot` | POST | — |
+| R2 | `/password/reset` | POST | — |
+| P12 | `/profile/email/otp` | POST | oui |
+| P13 | `/profile/email/verify` | POST | oui |
 
 ---
 
@@ -143,3 +149,37 @@ Erreurs : `429 OTP_COOLDOWN` (renvoi < 60 s), `422 OTP_INVALID`, `422 OTP_EXPIRE
 ```
 204. Données personnelles effacées, jetons révoqués, numéro/e-mail réutilisables ; l'historique
 des livraisons est conservé de façon anonyme (exigence Play Store / App Store).
+
+---
+
+## S1 / S2. Connexion par SMS (façon Yango) — sans mot de passe
+
+1. `POST /auth/otp/request` `{ "phone": "699451230" }` → 202
+   `{ "data": { "channel": "sms", "destination": "+237 •••• ••30", "expiresIn": 300, "resendIn": 60 } }`
+   (réponse identique que le numéro ait un compte ou non).
+2. `POST /auth/otp/verify` `{ "phone": "699451230", "code": "123456", "deviceName": "Pixel 7" }` → 200
+   `{ "token": "...", "isNewUser": true, "data": { profil } }`
+
+Si `isNewUser` vaut `true`, le compte vient d'être créé (numéro vérifié, **sans mot de passe** : `hasPassword: false`).
+L'app demande alors le prénom et le nom (`PATCH /profile`).
+Erreurs : `OTP_INVALID`, `OTP_EXPIRED`, `OTP_TOO_MANY_ATTEMPTS`, `OTP_COOLDOWN`, `ACCOUNT_SUSPENDED`.
+
+Compte sans mot de passe :
+- `POST /login_check` → `401 PASSWORD_NOT_SET` ;
+- `PUT /profile/password` sans `currentPassword` → crée le premier mot de passe ;
+- `DELETE /profile` avec `{ "confirm": true }` au lieu du mot de passe.
+
+## R1 / R2. Mot de passe oublié
+
+1. `POST /password/forgot` `{ "identifier": "677897012" }` (ou une adresse e-mail) → 202
+   `{ "data": { "channel": "sms" | "email", "destination": "...", "expiresIn": 300, "resendIn": 60 } }`.
+   La réponse est identique que le compte existe ou non.
+2. `POST /password/reset` `{ "identifier": "...", "code": "123456", "password": "...", "passwordConfirmation": "..." }` → 200.
+   Même réponse que la connexion (`token` + profil) : l'utilisateur est connecté directement, ses autres sessions sont fermées,
+   et le numéro ou l'e-mail utilisé est marqué vérifié.
+
+## P12 / P13. Vérifier mon e-mail
+
+`POST /profile/email/otp` (sans corps) → 202 (code envoyé à l'e-mail du profil), puis
+`POST /profile/email/verify` `{ "code": "123456" }` → profil avec `emailVerified: true`.
+Erreurs : `EMAIL_MISSING`, `EMAIL_ALREADY_VERIFIED`, `OTP_*`.

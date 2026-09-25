@@ -21,17 +21,39 @@ class AuthService
 
         $user = User::query()->whereIdentifier($identifier, $phone)->first();
 
+        if ($user !== null && ! $user->hasPassword()) {
+            throw new BusinessException(
+                "Aucun mot de passe n'est défini pour ce compte. Connectez-vous avec un code SMS.",
+                'PASSWORD_NOT_SET',
+                401,
+            );
+        }
+
         if ($user === null || ! Hash::check($password, $user->password)) {
             throw new BusinessException('Identifiant ou mot de passe incorrect.', 'INVALID_CREDENTIALS', 401);
         }
 
+        return ['user' => $user] + $this->startSession($user, $deviceName);
+    }
+
+    /**
+     * Opens a session for an already authenticated user (password, SMS code, reset...).
+     *
+     * @return array{token: string, expiresAt: Carbon}
+     */
+    public function startSession(User $user, ?string $deviceName = null): array
+    {
+        $this->ensureActive($user);
+        $user->forceFill(['last_login_at' => now()])->save();
+
+        return $this->issueToken($user, $deviceName);
+    }
+
+    public function ensureActive(User $user): void
+    {
         if (! $user->isActive()) {
             throw new BusinessException('Ce compte est suspendu. Contactez le support.', 'ACCOUNT_SUSPENDED', 403);
         }
-
-        $user->forceFill(['last_login_at' => now()])->save();
-
-        return ['user' => $user] + $this->issueToken($user, $deviceName);
     }
 
     /**

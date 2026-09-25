@@ -68,6 +68,7 @@ class ProfileController extends Controller
      * Supprimer mon compte
      *
      * Efface les données personnelles, révoque tous les jetons et libère le numéro / l'e-mail.
+     * `password` est demandé si le compte en a un ; sinon (compte créé par code SMS), `confirm: true`.
      * L'historique des livraisons est conservé de façon anonyme.
      */
     public function destroy(DeleteAccountRequest $request, AccountSecurityService $security): Response

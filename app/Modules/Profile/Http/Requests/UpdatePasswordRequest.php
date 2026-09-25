@@ -3,6 +3,7 @@
 namespace App\Modules\Profile\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class UpdatePasswordRequest extends FormRequest
@@ -15,7 +16,11 @@ class UpdatePasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'currentPassword' => ['required', 'string', 'current_password:sanctum'],
+            // Accounts created by SMS code have no password yet: the first one is simply set.
+            'currentPassword' => [
+                Rule::requiredIf(fn () => (bool) $this->user()?->hasPassword()),
+                'nullable', 'string', 'current_password:sanctum',
+            ],
             'newPassword' => ['required', 'string', Password::min(8), 'different:currentPassword'],
             'newPasswordConfirmation' => ['required', 'same:newPassword'],
             // Yango-like "log out other devices" (default: yes).

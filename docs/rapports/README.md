@@ -8,3 +8,5 @@ Un rapport par réalisation, du plus ancien au plus récent. Numérotation commu
 | 02 | 25/09/2026 | [Documentation interactive de l'API (Swagger)](2026-09-25-02-documentation-api-swagger.md) | Terminé |
 | 03 | 25/09/2026 | Module Profil de l'app mobile, façon Yango — voir le dépôt de l'app mobile (`moncolis-particulier-go/docs/rapports/`) | Terminé |
 | 04 | 25/09/2026 | Adresses enregistrées dans le parcours Expédier — voir le dépôt de l'app mobile | Terminé |
+| 05 | 25/09/2026 | [Connexion par SMS, mot de passe oublié et vérification d'e-mail (backend)](2026-09-25-05-connexion-sms-et-mot-de-passe-oublie-backend.md) | Terminé |
+| 06 | 25/09/2026 | Connexion par SMS façon Yango et mot de passe oublié (app mobile) — voir le dépôt de l'app mobile | Terminé |

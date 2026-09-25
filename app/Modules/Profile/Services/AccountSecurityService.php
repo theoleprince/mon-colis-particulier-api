@@ -32,6 +32,30 @@ class AccountSecurityService
         }
     }
 
+    public function requestEmailVerification(User $user): OtpChallenge
+    {
+        if ($user->email === null) {
+            throw new BusinessException("Ajoutez d'abord une adresse e-mail à votre profil.", 'EMAIL_MISSING');
+        }
+        if ($user->email_verified_at !== null) {
+            throw new BusinessException('Votre adresse e-mail est déjà vérifiée.', 'EMAIL_ALREADY_VERIFIED');
+        }
+
+        return $this->otp->send($user->email, OtpPurpose::EmailVerification, $user);
+    }
+
+    public function confirmEmailVerification(User $user, string $code): User
+    {
+        if ($user->email === null) {
+            throw new BusinessException("Ajoutez d'abord une adresse e-mail à votre profil.", 'EMAIL_MISSING');
+        }
+
+        $this->otp->verify($user->email, OtpPurpose::EmailVerification, $code, $user);
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        return $user;
+    }
+
     public function requestPhoneChange(User $user, string $newPhone): OtpChallenge
     {
         if ($newPhone === $user->phone) {

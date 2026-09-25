@@ -12,8 +12,16 @@
     ],
     "tags": [
         {
+            "name": "Connexion par SMS",
+            "description": "Connexion et inscription fa\u00e7on Yango : num\u00e9ro \u2192 code SMS \u2192 connect\u00e9."
+        },
+        {
             "name": "Authentification",
-            "description": "Connexion, inscription et d\u00e9connexion."
+            "description": "Connexion par mot de passe, inscription classique et d\u00e9connexion."
+        },
+        {
+            "name": "Mot de passe oubli\u00e9",
+            "description": "R\u00e9initialisation par code envoy\u00e9 par SMS ou par e-mail."
         },
         {
             "name": "Profil",
@@ -39,6 +47,143 @@
         }
     ],
     "paths": {
+        "/auth/otp/request": {
+            "post": {
+                "operationId": "auth.otp.request",
+                "description": "Envoie un code \u00e0 6 chiffres par SMS. M\u00eame r\u00e9ponse que le num\u00e9ro ait d\u00e9j\u00e0 un compte ou non.\n`devCode` n'est renvoy\u00e9 qu'en environnement local.\n\nErreur m\u00e9tier : `429 OTP_COOLDOWN` (nouvel envoi avant `resendIn` secondes).",
+                "summary": "Recevoir un code de connexion",
+                "tags": [
+                    "Connexion par SMS"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PhoneCodeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "channel": {
+                                                    "type": "string",
+                                                    "const": "sms"
+                                                },
+                                                "destination": {
+                                                    "type": "string"
+                                                },
+                                                "expiresIn": {
+                                                    "type": "integer"
+                                                },
+                                                "resendIn": {
+                                                    "type": "integer"
+                                                },
+                                                "devCode": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "channel",
+                                                "destination",
+                                                "expiresIn",
+                                                "resendIn"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/auth/otp/verify": {
+            "post": {
+                "operationId": "auth.otp.verify",
+                "description": "V\u00e9rifie le code puis connecte l'utilisateur. Si le num\u00e9ro n'avait pas de compte, il est cr\u00e9\u00e9\n(`isNewUser: true`) : l'app demande alors le pr\u00e9nom et le nom (`PATCH /profile`).\n\nErreurs m\u00e9tier : `422 OTP_INVALID`, `422 OTP_EXPIRED`, `429 OTP_TOO_MANY_ATTEMPTS`, `403 ACCOUNT_SUSPENDED`.",
+                "summary": "Se connecter avec le code",
+                "tags": [
+                    "Connexion par SMS"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyPhoneCodeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "tokenType": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string"
+                                        },
+                                        "isNewUser": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "tokenType",
+                                        "expiresAt",
+                                        "isNewUser",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
         "/login_check": {
             "post": {
                 "operationId": "auth.login",
@@ -179,6 +324,142 @@
                 }
             }
         },
+        "/password/forgot": {
+            "post": {
+                "operationId": "password.forgot",
+                "description": "`identifier` : num\u00e9ro de t\u00e9l\u00e9phone (code par SMS) ou adresse e-mail (code par e-mail).\nLa r\u00e9ponse est identique que le compte existe ou non (aucune information divulgu\u00e9e).\n\nErreur m\u00e9tier : `429 OTP_COOLDOWN`.",
+                "summary": "Recevoir un code de r\u00e9initialisation",
+                "tags": [
+                    "Mot de passe oubli\u00e9"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ForgotPasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "channel": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "sms",
+                                                        "email"
+                                                    ]
+                                                },
+                                                "destination": {
+                                                    "type": "string"
+                                                },
+                                                "expiresIn": {
+                                                    "type": "integer"
+                                                },
+                                                "resendIn": {
+                                                    "type": "integer"
+                                                },
+                                                "devCode": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "channel",
+                                                "destination",
+                                                "expiresIn",
+                                                "resendIn"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
+        "/password/reset": {
+            "post": {
+                "operationId": "password.reset",
+                "description": "V\u00e9rifie le code, enregistre le nouveau mot de passe, d\u00e9connecte tous les autres appareils\net connecte directement l'utilisateur.\n\nErreurs m\u00e9tier : `422 OTP_INVALID`, `422 OTP_EXPIRED`, `429 OTP_TOO_MANY_ATTEMPTS`.",
+                "summary": "Choisir un nouveau mot de passe",
+                "tags": [
+                    "Mot de passe oubli\u00e9"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "tokenType": {
+                                            "type": "string",
+                                            "const": "Bearer"
+                                        },
+                                        "expiresAt": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProfileResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "token",
+                                        "tokenType",
+                                        "expiresAt",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                },
+                "security": [
+                    {
+                        "clientAppCode": []
+                    }
+                ]
+            }
+        },
         "/profile": {
             "get": {
                 "operationId": "profile.show",
@@ -276,7 +557,7 @@
             },
             "delete": {
                 "operationId": "profile.destroy",
-                "description": "Efface les donn\u00e9es personnelles, r\u00e9voque tous les jetons et lib\u00e8re le num\u00e9ro / l'e-mail.\nL'historique des livraisons est conserv\u00e9 de fa\u00e7on anonyme.",
+                "description": "Efface les donn\u00e9es personnelles, r\u00e9voque tous les jetons et lib\u00e8re le num\u00e9ro / l'e-mail.\n`password` est demand\u00e9 si le compte en a un ; sinon (compte cr\u00e9\u00e9 par code SMS), `confirm: true`.\nL'historique des livraisons est conserv\u00e9 de fa\u00e7on anonyme.",
                 "summary": "Supprimer mon compte",
                 "tags": [
                     "Profil"
@@ -288,6 +569,22 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "confirm",
+                        "in": "query",
+                        "required": true,
+                        "description": "Account without password (created by SMS code): explicit confirmation instead.",
+                        "schema": {
+                            "enum": [
+                                "yes",
+                                "on",
+                                "1",
+                                1,
+                                "true",
+                                true
+                            ]
                         }
                     },
                     {
@@ -414,7 +711,7 @@
         "/profile/password": {
             "put": {
                 "operationId": "accountSecurity.updatePassword",
-                "description": "Par d\u00e9faut (`logoutOtherDevices`), les autres appareils sont d\u00e9connect\u00e9s ; le jeton courant reste valide.",
+                "description": "Par d\u00e9faut (`logoutOtherDevices`), les autres appareils sont d\u00e9connect\u00e9s ; le jeton courant reste valide.\n`currentPassword` n'est pas demand\u00e9 si le compte n'a pas encore de mot de passe (`hasPassword: false`,\ncompte cr\u00e9\u00e9 par code SMS) : c'est alors la cr\u00e9ation du premier mot de passe.",
                 "summary": "Changer mon mot de passe",
                 "tags": [
                     "S\u00e9curit\u00e9 du compte"
@@ -521,6 +818,119 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/ConfirmPhoneChangeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "`ProfileResource`",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ProfileResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "preferences"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/profile/email/otp": {
+            "post": {
+                "operationId": "accountSecurity.requestEmailVerification",
+                "description": "Envoie un code \u00e0 6 chiffres \u00e0 l'adresse e-mail du profil.\n\nErreurs m\u00e9tier : `422 EMAIL_MISSING`, `422 EMAIL_ALREADY_VERIFIED`, `429 OTP_COOLDOWN`.",
+                "summary": "V\u00e9rifier mon e-mail \u2014 1. envoyer le code",
+                "tags": [
+                    "S\u00e9curit\u00e9 du compte"
+                ],
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "channel": {
+                                                    "type": "string",
+                                                    "const": "email"
+                                                },
+                                                "destination": {
+                                                    "type": "string"
+                                                },
+                                                "expiresIn": {
+                                                    "type": "integer"
+                                                },
+                                                "resendIn": {
+                                                    "type": "integer"
+                                                },
+                                                "devCode": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "channel",
+                                                "destination",
+                                                "expiresIn",
+                                                "resendIn"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/profile/email/verify": {
+            "post": {
+                "operationId": "accountSecurity.confirmEmailVerification",
+                "description": "Erreurs m\u00e9tier : `422 OTP_INVALID`, `422 OTP_EXPIRED`, `429 OTP_TOO_MANY_ATTEMPTS`.",
+                "summary": "V\u00e9rifier mon e-mail \u2014 2. valider le code",
+                "tags": [
+                    "S\u00e9curit\u00e9 du compte"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VerifyEmailRequest"
                             }
                         }
                     }
@@ -863,6 +1273,20 @@
                 ],
                 "title": "ConfirmPhoneChangeRequest"
             },
+            "ForgotPasswordRequest": {
+                "type": "object",
+                "description": "\"Mot de passe oubli\u00e9\", step 1: `identifier` = phone number or e-mail address.",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "maxLength": 255
+                    }
+                },
+                "required": [
+                    "identifier"
+                ],
+                "title": "ForgotPasswordRequest"
+            },
             "Gender": {
                 "type": "string",
                 "enum": [
@@ -896,6 +1320,19 @@
                     "password"
                 ],
                 "title": "LoginRequest"
+            },
+            "PhoneCodeRequest": {
+                "type": "object",
+                "description": "Step 1 of the SMS sign-in flow: the phone number.",
+                "properties": {
+                    "phone": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "phone"
+                ],
+                "title": "PhoneCodeRequest"
             },
             "PreferencesResource": {
                 "type": "object",
@@ -983,6 +1420,10 @@
                     "emailVerified": {
                         "type": "boolean"
                     },
+                    "hasPassword": {
+                        "type": "boolean",
+                        "description": "false for accounts created by SMS code until a password is set."
+                    },
                     "avatarUrl": {
                         "type": "null"
                     },
@@ -1053,6 +1494,7 @@
                     "phoneVerified",
                     "email",
                     "emailVerified",
+                    "hasPassword",
                     "avatarUrl",
                     "gender",
                     "birthDate",
@@ -1129,6 +1571,39 @@
                     "phone"
                 ],
                 "title": "RequestPhoneChangeRequest"
+            },
+            "ResetPasswordRequest": {
+                "type": "object",
+                "description": "\"Mot de passe oubli\u00e9\", step 2: identifier, received code and new password.",
+                "properties": {
+                    "identifier": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "passwordConfirmation": {
+                        "type": "string"
+                    },
+                    "deviceName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "identifier",
+                    "code",
+                    "password",
+                    "passwordConfirmation"
+                ],
+                "title": "ResetPasswordRequest"
             },
             "SavedPlaceRequest": {
                 "type": "object",
@@ -1269,7 +1744,11 @@
                 "type": "object",
                 "properties": {
                     "currentPassword": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Accounts created by SMS code have no password yet: the first one is simply set."
                     },
                     "newPassword": {
                         "type": "string"
@@ -1283,7 +1762,6 @@
                     }
                 },
                 "required": [
-                    "currentPassword",
                     "newPassword",
                     "newPasswordConfirmation"
                 ],
@@ -1385,6 +1863,42 @@
                     }
                 },
                 "title": "UpdateProfileRequest"
+            },
+            "VerifyEmailRequest": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code"
+                ],
+                "title": "VerifyEmailRequest"
+            },
+            "VerifyPhoneCodeRequest": {
+                "type": "object",
+                "description": "Step 2 of the SMS sign-in flow: the phone number and the received code.",
+                "properties": {
+                    "phone": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "deviceName": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    }
+                },
+                "required": [
+                    "phone",
+                    "code"
+                ],
+                "title": "VerifyPhoneCodeRequest"
             }
         },
         "responses": {

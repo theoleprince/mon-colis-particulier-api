@@ -84,6 +84,14 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * Accounts created by SMS code have no password until the user sets one.
+     */
+    public function hasPassword(): bool
+    {
+        return $this->password !== null;
+    }
+
     public function isActive(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

@@ -16,7 +16,9 @@ Route::middleware('auth:sanctum')->prefix('profile')->group(function () {
 
     Route::put('/password', [AccountSecurityController::class, 'updatePassword']);
     Route::post('/phone/otp', [AccountSecurityController::class, 'requestPhoneChange'])->middleware('throttle:otp');
-    Route::post('/phone/verify', [AccountSecurityController::class, 'confirmPhoneChange'])->middleware('throttle:otp');
+    Route::post('/phone/verify', [AccountSecurityController::class, 'confirmPhoneChange'])->middleware('throttle:otp-verify');
+    Route::post('/email/otp', [AccountSecurityController::class, 'requestEmailVerification'])->middleware('throttle:otp');
+    Route::post('/email/verify', [AccountSecurityController::class, 'confirmEmailVerification'])->middleware('throttle:otp-verify');
 
     Route::get('/preferences', [PreferenceController::class, 'show']);
     Route::patch('/preferences', [PreferenceController::class, 'update']);

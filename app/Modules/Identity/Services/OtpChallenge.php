@@ -8,6 +8,7 @@ namespace App\Modules\Identity\Services;
 final class OtpChallenge
 {
     public function __construct(
+        public readonly string $channel,
         public readonly string $maskedDestination,
         public readonly int $expiresIn,
         public readonly int $resendIn,
@@ -18,6 +19,7 @@ final class OtpChallenge
     public function toArray(): array
     {
         return array_filter([
+            'channel' => $this->channel,
             'destination' => $this->maskedDestination,
             'expiresIn' => $this->expiresIn,
             'resendIn' => $this->resendIn,

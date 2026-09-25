@@ -26,6 +26,8 @@ class ProfileResource extends JsonResource
             'phoneVerified' => $this->phone_verified_at !== null,
             'email' => $this->email,
             'emailVerified' => $this->email_verified_at !== null,
+            // false for accounts created by SMS code until a password is set.
+            'hasPassword' => $this->hasPassword(),
             'avatarUrl' => $this->avatar_path
                 ? Storage::disk(config('moncolis.profile.avatar_disk'))->url($this->avatar_path)
                 : null,

@@ -25,6 +25,9 @@ class IdentityServiceProvider extends ModuleServiceProvider
 
         RateLimiter::for('register', fn (Request $request) => Limit::perMinute(10)->by($request->ip()));
 
+        // Code checks: the OTP itself allows 5 attempts per code, this only caps brute force per IP.
+        RateLimiter::for('otp-verify', fn (Request $request) => Limit::perMinute(15)->by($request->ip()));
+
         RateLimiter::for('otp', fn (Request $request) => Limit::perMinute(5)->by(
             ($request->user()?->getAuthIdentifier() ?? 'guest').'|'.$request->ip()
         ));
